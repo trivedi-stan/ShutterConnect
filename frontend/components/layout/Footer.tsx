@@ -1,7 +1,13 @@
+'use client'
+
 import Link from 'next/link'
+import { useState } from 'react'
 import { Camera, Facebook, Twitter, Instagram, Linkedin, Mail, Phone, MapPin } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 export function Footer() {
+  const [email, setEmail] = useState('')
+  const [isSubscribing, setIsSubscribing] = useState(false)
   const navigation = {
     main: [
       { name: 'Find Photographers', href: '/photographers' },
@@ -37,6 +43,43 @@ export function Footer() {
     { name: 'LinkedIn', href: '#', icon: Linkedin },
   ]
 
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!email || !email.includes('@')) {
+      toast.error('Please enter a valid email address')
+      return
+    }
+
+    setIsSubscribing(true)
+
+    try {
+      const response = await fetch('/api/newsletter/subscribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          source: 'footer'
+        }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        toast.success('Successfully subscribed to our newsletter!')
+        setEmail('')
+      } else {
+        toast.error(data.error || 'Failed to subscribe. Please try again.')
+      }
+    } catch (error) {
+      toast.error('Something went wrong. Please try again.')
+    } finally {
+      setIsSubscribing(false)
+    }
+  }
+
   return (
     <footer className="bg-gray-900 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -51,7 +94,7 @@ export function Footer() {
             <p className="text-gray-400 mb-6 max-w-md">
               Democratizing access to professional photography by connecting clients with verified photographers in under 60 seconds.
             </p>
-            
+
             {/* Contact Info */}
             <div className="space-y-2 text-sm text-gray-400">
               <div className="flex items-center space-x-2">
@@ -60,11 +103,11 @@ export function Footer() {
               </div>
               <div className="flex items-center space-x-2">
                 <Phone className="h-4 w-4" />
-                <span>+1 (555) 123-4567</span>
+                <span>+91 9616819656</span>
               </div>
               <div className="flex items-center space-x-2">
                 <MapPin className="h-4 w-4" />
-                <span>San Francisco, CA</span>
+                <span>Noida, India</span>
               </div>
             </div>
           </div>
@@ -144,16 +187,24 @@ export function Footer() {
                 Get the latest photography tips, platform updates, and exclusive offers.
               </p>
             </div>
-            <div className="flex space-x-2 max-w-md">
+            <form onSubmit={handleNewsletterSubmit} className="flex space-x-2 max-w-md">
               <input
                 type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
                 className="flex-1 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                disabled={isSubscribing}
+                required
               />
-              <button className="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors">
-                Subscribe
+              <button
+                type="submit"
+                disabled={isSubscribing}
+                className="px-6 py-2 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors"
+              >
+                {isSubscribing ? 'Subscribing...' : 'Subscribe'}
               </button>
-            </div>
+            </form>
           </div>
         </div>
 
@@ -162,7 +213,7 @@ export function Footer() {
           <div className="text-gray-400 text-sm mb-4 md:mb-0">
             © {new Date().getFullYear()} ShutterConnect. All rights reserved.
           </div>
-          
+
           {/* Social Links */}
           <div className="flex space-x-4">
             {social.map((item) => (
