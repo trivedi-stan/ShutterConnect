@@ -1,60 +1,101 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { sendNotificationEmail } from '@/lib/email'
 import { z } from 'zod'
+import fs from 'fs'
+import path from 'path'
+import { sendNotificationEmail } from '@/lib/email'
 
 const subscribeSchema = z.object({
   email: z.string().email('Invalid email address'),
   source: z.string().optional().default('website')
 })
 
+// Simple file-based storage for now (will be replaced with database later)
+const NEWSLETTER_FILE = path.join(process.cwd(), 'newsletter-subscribers.json')
+
+function getSubscribers(): any[] {
+  try {
+    if (fs.existsSync(NEWSLETTER_FILE)) {
+      const data = fs.readFileSync(NEWSLETTER_FILE, 'utf8')
+      return JSON.parse(data)
+    }
+    return []
+  } catch (error) {
+    console.error('Error reading subscribers file:', error)
+    return []
+  }
+}
+
+function saveSubscribers(subscribers: any[]): void {
+  try {
+    fs.writeFileSync(NEWSLETTER_FILE, JSON.stringify(subscribers, null, 2))
+  } catch (error) {
+    console.error('Error saving subscribers file:', error)
+    throw error
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
+    console.log('Newsletter subscription request received')
+
     const body = await request.json()
+    console.log('Request body:', body)
+
     const { email, source } = subscribeSchema.parse(body)
+    console.log('Parsed email:', email, 'source:', source)
+
+    // Get existing subscribers
+    const subscribers = getSubscribers()
+    console.log('Current subscribers count:', subscribers.length)
 
     // Check if email already exists
-    const existingSubscriber = await prisma.newsletter.findUnique({
-      where: { email }
-    })
+    const existingSubscriber = subscribers.find(sub => sub.email === email)
+    console.log('Existing subscriber:', existingSubscriber)
 
     if (existingSubscriber) {
       if (existingSubscriber.isActive) {
+        console.log('Email already subscribed')
         return NextResponse.json(
           { error: 'Email is already subscribed to our newsletter' },
           { status: 400 }
         )
       } else {
         // Reactivate subscription
-        await prisma.newsletter.update({
-          where: { email },
-          data: {
-            isActive: true,
-            subscribedAt: new Date(),
-            unsubscribedAt: null,
-            source
-          }
-        })
+        console.log('Reactivating subscription...')
+        existingSubscriber.isActive = true
+        existingSubscriber.subscribedAt = new Date().toISOString()
+        existingSubscriber.unsubscribedAt = null
+        existingSubscriber.source = source
+        saveSubscribers(subscribers)
+        console.log('Subscription reactivated')
       }
     } else {
       // Create new subscription
-      await prisma.newsletter.create({
-        data: {
-          email,
-          source,
-          isActive: true
-        }
-      })
+      console.log('Creating new subscription...')
+      const newSubscriber = {
+        id: Date.now().toString(),
+        email,
+        source,
+        isActive: true,
+        subscribedAt: new Date().toISOString(),
+        unsubscribedAt: null
+      }
+      subscribers.push(newSubscriber)
+      saveSubscribers(subscribers)
+      console.log('New subscription created')
     }
 
-    // Send welcome email
+    // Send welcome email (optional - don't fail if this fails)
     try {
+      console.log('Attempting to send welcome email...')
       await sendWelcomeNewsletterEmail(email)
+      console.log('Welcome email sent successfully')
     } catch (emailError) {
       console.error('Failed to send welcome email:', emailError)
       // Don't fail the subscription if email fails
     }
 
+    console.log('Newsletter subscription successful')
     return NextResponse.json({
       message: 'Successfully subscribed to newsletter',
       email
@@ -62,16 +103,21 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Newsletter subscription error:', error)
-    
+
     if (error instanceof z.ZodError) {
+      console.error('Validation error:', error.errors)
       return NextResponse.json(
         { error: 'Invalid email address' },
         { status: 400 }
       )
     }
 
+    // Return more specific error information
     return NextResponse.json(
-      { error: 'Failed to subscribe to newsletter' },
+      {
+        error: 'Failed to subscribe to newsletter',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }

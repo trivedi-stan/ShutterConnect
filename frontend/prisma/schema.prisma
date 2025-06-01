@@ -1,0 +1,303 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  CLIENT
+  PHOTOGRAPHER
+  ADMIN
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum PhotoSessionType {
+  PORTRAIT
+  WEDDING
+  EVENT
+  COMMERCIAL
+  PRODUCT
+  REAL_ESTATE
+  FAMILY
+  MATERNITY
+  NEWBORN
+  CORPORATE
+  FASHION
+  LANDSCAPE
+  OTHER
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String?
+  firstName     String
+  lastName      String
+  phone         String?
+  avatar        String?
+  role          UserRole  @default(CLIENT)
+  isVerified    Boolean   @default(false)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  photographer  Photographer?
+  clientBookings Booking[] @relation("ClientBookings")
+  sentMessages  Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  reviews       Review[]
+  notifications Notification[]
+  accounts      Account[]
+  sessions      Session[]
+
+  @@map("users")
+}
+
+model Photographer {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  bio             String?
+  experience      Int?     // years of experience
+  hourlyRate      Float?
+  location        String?
+  latitude        Float?
+  longitude       Float?
+  radius          Int?     // service radius in km
+  specialties     PhotoSessionType[]
+  equipment       String[] // camera equipment
+  languages       String[]
+  portfolio       String[] // URLs to portfolio images
+  isAvailable     Boolean  @default(true)
+  rating          Float?   @default(0)
+  totalReviews    Int      @default(0)
+  totalBookings   Int      @default(0)
+  joinedAt        DateTime @default(now())
+  lastActiveAt    DateTime @default(now())
+
+  // Relations
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookings        Booking[] @relation("PhotographerBookings")
+  photos          Photo[]
+  availability    Availability[]
+  packages        Package[]
+
+  @@map("photographers")
+}
+
+model Package {
+  id              String   @id @default(cuid())
+  photographerId  String
+  name            String
+  description     String?
+  price           Float
+  duration        Int      // duration in hours
+  deliverables    String[] // what's included
+  sessionType     PhotoSessionType
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  photographer    Photographer @relation(fields: [photographerId], references: [id], onDelete: Cascade)
+  bookings        Booking[]
+
+  @@map("packages")
+}
+
+model Availability {
+  id              String   @id @default(cuid())
+  photographerId  String
+  date            DateTime
+  startTime       String   // HH:MM format
+  endTime         String   // HH:MM format
+  isBooked        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  // Relations
+  photographer    Photographer @relation(fields: [photographerId], references: [id], onDelete: Cascade)
+
+  @@map("availability")
+}
+
+model Booking {
+  id              String        @id @default(cuid())
+  clientId        String
+  photographerId  String
+  packageId       String?
+  sessionType     PhotoSessionType
+  date            DateTime
+  startTime       String
+  endTime         String
+  location        String
+  notes           String?
+  totalAmount     Float
+  status          BookingStatus @default(PENDING)
+  paymentStatus   PaymentStatus @default(PENDING)
+  stripePaymentId String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  client          User          @relation("ClientBookings", fields: [clientId], references: [id])
+  photographer    Photographer  @relation("PhotographerBookings", fields: [photographerId], references: [id])
+  package         Package?      @relation(fields: [packageId], references: [id])
+  photos          Photo[]
+  review          Review?
+  messages        Message[]
+
+  @@map("bookings")
+}
+
+model Photo {
+  id              String   @id @default(cuid())
+  photographerId  String
+  bookingId       String?
+  title           String?
+  description     String?
+  url             String
+  thumbnailUrl    String?
+  tags            String[]
+  isPublic        Boolean  @default(false)
+  isPortfolio     Boolean  @default(false)
+  metadata        Json?    // EXIF data, camera settings, etc.
+  uploadedAt      DateTime @default(now())
+
+  // Relations
+  photographer    Photographer @relation(fields: [photographerId], references: [id], onDelete: Cascade)
+  booking         Booking?     @relation(fields: [bookingId], references: [id])
+
+  @@map("photos")
+}
+
+model Review {
+  id              String   @id @default(cuid())
+  bookingId       String   @unique
+  reviewerId      String
+  rating          Int      // 1-5 stars
+  comment         String?
+  isPublic        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  booking         Booking  @relation(fields: [bookingId], references: [id])
+  reviewer        User     @relation(fields: [reviewerId], references: [id])
+
+  @@map("reviews")
+}
+
+model Message {
+  id              String   @id @default(cuid())
+  senderId        String
+  receiverId      String
+  bookingId       String?
+  content         String
+  isRead          Boolean  @default(false)
+  sentAt          DateTime @default(now())
+
+  // Relations
+  sender          User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiver        User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  booking         Booking? @relation(fields: [bookingId], references: [id])
+
+  @@map("messages")
+}
+
+model Notification {
+  id              String   @id @default(cuid())
+  userId          String
+  title           String
+  message         String
+  type            String   // booking, payment, message, etc.
+  isRead          Boolean  @default(false)
+  data            Json?    // additional data
+  createdAt       DateTime @default(now())
+
+  // Relations
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model PasswordResetToken {
+  id      String   @id @default(cuid())
+  email   String
+  token   String   @unique
+  expires DateTime
+  createdAt DateTime @default(now())
+
+  @@map("password_reset_tokens")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Newsletter {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  isActive    Boolean  @default(true)
+  subscribedAt DateTime @default(now())
+  unsubscribedAt DateTime?
+  source      String?  // where they subscribed from (footer, popup, etc.)
+
+  @@map("newsletter_subscribers")
+}

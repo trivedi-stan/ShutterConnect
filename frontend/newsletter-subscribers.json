@@ -1,0 +1,26 @@
+[
+  {
+    "id": "1748761979055",
+    "email": "test@example.com",
+    "source": "footer",
+    "isActive": true,
+    "subscribedAt": "2025-06-01T07:12:59.055Z",
+    "unsubscribedAt": null
+  },
+  {
+    "id": "1748762017268",
+    "email": "user@shutterconnect.com",
+    "source": "footer",
+    "isActive": true,
+    "subscribedAt": "2025-06-01T07:13:37.268Z",
+    "unsubscribedAt": null
+  },
+  {
+    "id": "1748762044037",
+    "email": "annugupta868@gmail.com",
+    "source": "footer",
+    "isActive": true,
+    "subscribedAt": "2025-06-01T07:14:04.037Z",
+    "unsubscribedAt": null
+  }
+]
