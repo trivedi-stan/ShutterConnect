@@ -22,5 +22,13 @@
     "isActive": true,
     "subscribedAt": "2025-06-01T07:14:04.037Z",
     "unsubscribedAt": null
+  },
+  {
+    "id": "1748762062800",
+    "email": "piyushtrivedia@gmail.com",
+    "source": "footer",
+    "isActive": true,
+    "subscribedAt": "2025-06-01T07:14:22.800Z",
+    "unsubscribedAt": null
   }
 ]
