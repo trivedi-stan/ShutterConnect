@@ -1,0 +1,50 @@
+{
+  "name": "shutterconnect",
+  "version": "1.0.0",
+  "description": "A modern photography marketplace connecting photographers with clients",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=frontend",
+    "build": "npm run build --workspace=frontend",
+    "start": "npm run start --workspace=frontend",
+    "lint": "npm run lint --workspace=frontend",
+    "install:frontend": "npm install --workspace=frontend",
+    "install:backend": "npm install --workspace=backend",
+    "install:all": "npm install && npm run install:frontend && npm run install:backend",
+    "db:generate": "npm run db:generate --workspace=backend",
+    "db:push": "npm run db:push --workspace=backend",
+    "db:migrate": "npm run db:migrate --workspace=backend",
+    "db:studio": "npm run db:studio --workspace=backend",
+    "db:seed": "npm run db:seed --workspace=backend",
+    "setup": "node setup.js",
+    "setup:full": "npm run install:all && npm run db:generate && npm run db:push",
+    "clean": "rm -rf frontend/node_modules backend/node_modules node_modules frontend/.next backend/dist"
+  },
+  "keywords": [
+    "photography",
+    "marketplace",
+    "nextjs",
+    "react",
+    "typescript",
+    "prisma",
+    "postgresql"
+  ],
+  "author": "ShutterConnect Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/shutterconnect.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/shutterconnect/issues"
+  },
+  "homepage": "https://github.com/yourusername/shutterconnect#readme"
+}
