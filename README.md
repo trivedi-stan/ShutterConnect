@@ -54,7 +54,7 @@ A modern, full-stack photography marketplace that connects clients with verified
 
 ## 📋 Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - PostgreSQL database
 - Stripe account (for payments)
 - Cloudinary account (for image storage)
@@ -63,7 +63,7 @@ A modern, full-stack photography marketplace that connects clients with verified
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/yourusername/shutterconnect.git
+git clone https://github.com/trivedi-stan/ShutterConnect.git
 cd shutterconnect
 ```
 
