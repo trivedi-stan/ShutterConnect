@@ -83,7 +83,10 @@ export function Navbar() {
                   ))}
                   <hr className="my-1" />
                   <button
-                    onClick={() => signOut()}
+                    onClick={async () => {
+                      await signOut({ redirect: false })
+                      window.location.href = 'http://localhost:3000/auth/signin'
+                    }}
                     className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
                     <LogOut className="w-4 h-4 mr-3" />
@@ -129,7 +132,7 @@ export function Navbar() {
                 {item.name}
               </Link>
             ))}
-            
+
             {session ? (
               <>
                 <hr className="my-2" />
@@ -145,9 +148,10 @@ export function Navbar() {
                   </Link>
                 ))}
                 <button
-                  onClick={() => {
-                    signOut()
+                  onClick={async () => {
+                    await signOut({ redirect: false })
                     setIsOpen(false)
+                    window.location.href = 'http://localhost:3000/auth/signin'
                   }}
                   className="flex items-center w-full text-gray-600 hover:text-gray-900 px-3 py-2 text-base font-medium"
                 >

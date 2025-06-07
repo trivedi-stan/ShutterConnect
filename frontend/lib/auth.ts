@@ -7,6 +7,7 @@ import bcrypt from 'bcryptjs'
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
+  debug: process.env.NODE_ENV === 'development',
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -152,8 +153,11 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: '/auth/signin',
+    signOut: '/auth/signin',
     error: '/auth/signin',
   },
+  // Force the correct URL
+  url: process.env.NEXTAUTH_URL || 'http://localhost:3000',
   events: {
     async signIn({ user, account, isNewUser }) {
       // Log successful sign ins
